@@ -1,0 +1,11 @@
+CHANGELOG.txt
+LICENCE.txt
+MANIFEST.in
+README.txt
+setup.py
+DataGuru/__init__.py
+DataGuru.egg-info/PKG-INFO
+DataGuru.egg-info/SOURCES.txt
+DataGuru.egg-info/dependency_links.txt
+DataGuru.egg-info/requires.txt
+DataGuru.egg-info/top_level.txt

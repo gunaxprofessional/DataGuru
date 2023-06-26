@@ -1,0 +1,11 @@
+Change Log
+==========
+
+0.0.1 (12/06/2023)
+-------------------
+- First Release
+- features
+--- 1. missingValues
+--- 2. findOutliers
+--- 3. analyzeData
+ 
