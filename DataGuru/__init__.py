@@ -3,6 +3,8 @@ import pandas as pd
 import numpy as np
 from scipy import stats
 
+'''------------------------------------------------------ Missing Values------------------------------------------------------'''
+
 
 def missingValues(data):
     variable_name = []
@@ -19,20 +21,26 @@ def missingValues(data):
         total_value.append(data[col].shape[0])
         total_missing_value.append(data[col].isnull().sum())
         missing_value_rate.append(
-            round(data[col].isnull().sum()/data[col].shape[0], 4))
+            round(data[col].isnull().sum() / data[col].shape[0], 4))
         unique_value_list.append(data[col].unique())
         total_unique_value.append(len(data[col].unique()))
 
-    missing_data = pd.DataFrame({"Variable": variable_name,
-                                 "#_Total_Value": total_value,
-                                "#_Total_Missing_Value": total_missing_value,
-                                 "%_Missing_Value_Rate": missing_value_rate,
-                                 "Data_Type": data_type, "Unique_Value": unique_value_list,
-                                 "Total_Unique_Value": total_unique_value
-                                 })
+    missing_data = pd.DataFrame({
+        "Variable": variable_name,
+        "Total Value": total_value,
+        "Total Missing Value": total_missing_value,
+        "Missing Value Rate": missing_value_rate,
+        "Data Type": data_type,
+        "Unique Value": unique_value_list,
+        "Total Unique Value": total_unique_value
+    })
 
     missing_data = missing_data.set_index("Variable")
-    return missing_data.sort_values("#_Total_Missing_Value", ascending=False)
+    missing_data = missing_data[missing_data["Total Missing Value"] > 0]
+    return missing_data.sort_values("Total Missing Value", ascending=False)
+
+
+'''------------------------------------------ detect Outliers -----------------------------------------------------'''
 
 
 def detect_outliers_zscore(data):
@@ -78,24 +86,32 @@ def findOutliers(data, method='zscore'):
                 'Mean': mean,
                 'Standard Deviation': std,
                 'Outliers': outliers,
-                'Total Outliers': len(outliers),
-                'Percentage of Outliers': (len(outliers) / data.shape[0]) * 100
             }, ignore_index=True)
 
-    outliers_data.sort_values(
-        by='Percentage of Outliers', ascending=False, inplace=True)
-    return outliers_data
+    if outliers_data.empty:
+        return outliers_data
+    else:
+        outliers_data['Total Outliers'] = outliers_data['Outliers'].apply(len)
+        outliers_data['Percentage of Outliers'] = (
+            outliers_data['Total Outliers'] / data.shape[0]) * 100
+        outliers_data.reset_index(drop=True, inplace=True)
+        outliers_data.sort_values(
+            by='Percentage of Outliers', ascending=False, inplace=True)
+        return outliers_data
+
+
+'''------------------------------------------------------- analyze the Data -------------------------------------------------------------'''
 
 
 def analyze_column(data, numCol, catCol):
     grouped_data = data.groupby(catCol)
     mean = grouped_data[numCol].mean()
     std = grouped_data[numCol].std()
-    percentage = grouped_data[numCol].sum() / data[numCol].sum() * 100
+    total = grouped_data.size().sum()
+    percentage = grouped_data.size() / total * 100
 
     result_df = pd.DataFrame(
         {'Mean': mean, 'Standard Deviation': std, 'Percentage': percentage})
-
     return result_df
 
 
@@ -106,11 +122,14 @@ def analyzeData(data, numCol, catCol):
     print(analysis_result)
     print()
 
-    fig = px.bar(analysis_result, y=['Mean', 'Standard Deviation', 'Percentage'],
-                 labels={'value': 'Value', 'variable': 'Metric'})
+    fig = px.bar(analysis_result, x=analysis_result.index, y=[
+                 'Mean', 'Standard Deviation', 'Percentage'], labels={'value': 'Value', 'variable': 'Metric'})
 
-    fig.update_traces(text=analysis_result['Mean'].round(
-        2).astype(str) + '%', textposition='outside')
+    texts = [analysis_result['Mean'],
+             analysis_result['Standard Deviation'], analysis_result['Percentage']]
+    for i, t in enumerate(texts):
+        fig.data[i].text = t.round(2).astype(str) + '%'
+        fig.data[i].textposition = 'outside'
 
     fig.update_layout(
         title={
